@@ -23,7 +23,7 @@ A terminal-styled, theme-aware GitHub profile lookup tool built using HTML, CSS,
 ## 🌐 Live Demo
 
 Experience GitGaze in action! Visit the deployed project here:
-➡️ **https://gitgaze.netlify.app/**
+➡️ **[https://gitgaze.netlify.app/](https://gitgaze.netlify.app/)**
 
 ---
 
@@ -39,17 +39,19 @@ Experience GitGaze in action! Visit the deployed project here:
 
 ## 📂 How to Use
 
-1.  **Clone the repository**:
+1. **Clone the repository**:
+
     ```bash
     git clone https://github.com/ParamveerSingh19/gitgaze.git
     ```
-2.  **Navigate into the project folder**:
+
+2. **Navigate into the project folder**:
+
     ```bash
     cd gitgaze
     ```
-3.  **Open `index.html` in your browser** to launch the application.
 
-
+3. **Open `index.html` in your browser** to launch the application.
 
 > **Note:** GitGaze uses the public, unauthenticated GitHub API, which is limited to 60 requests per hour per IP address.
 
