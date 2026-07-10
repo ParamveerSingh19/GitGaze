@@ -19,7 +19,9 @@
     <div class="flex gap-2 mb-5">
       <input type="text" id="searchInput" placeholder="Enter GitHub username"
         class="flex-1 p-2 rounded-lg bg-black/40 border border-gray-500 outline-none focus:border-blue-400" />
-      <button class="bg-blue-500 px-4 rounded-lg hover:bg-blue-600 transition cursor-pointer" id="searchBtn">
+      <button
+        class="bg-blue-500 px-4 rounded-lg hover:bg-blue-600 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        id="searchBtn">
         <i class="fa-solid fa-search"></i>
       </button>
     </div>
@@ -50,7 +52,7 @@
 
     <!-- Profile Container -->
     <div id="profileContainer"></div>
-  </div>f
+  </div>
 
   <script src="script.js"></script>
 </body>

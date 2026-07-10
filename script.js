@@ -8,31 +8,57 @@ class GetGithubProfileFinder {
     }
 
     addEvents() {
-        this.searchBtn.addEventListener("click", () => {
-            let userNameValue = this.searchInput.value.trim();
+        this.searchBtn.addEventListener("click", () => this.handleSearch());
 
-            if (userNameValue.length === 0) {
-                alert("Please enter valid username!");
+        // Allow pressing Enter to trigger search
+        this.searchInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                this.handleSearch();
             }
-            this.getProfile(userNameValue)
-            this.searchInput.value = ""
-        })
+        });
     }
+
+    handleSearch() {
+        let userNameValue = this.searchInput.value.trim();
+
+        if (userNameValue.length === 0) {
+            alert("Please enter valid username!");
+            return;
+        }
+
+        this.getProfile(userNameValue);
+        this.searchInput.value = "";
+    }
+
     async getProfile(userNameValue) {
         try {
+            // Prevent duplicate/overlapping requests while one is in flight
+            this.searchBtn.disabled = true;
             this.Skeleton.style.display = "block";
             this.profileContainer.innerHTML = "";
-            let res = await (await fetch(`https://api.github.com/users/${userNameValue}`))
+
+            let res = await fetch(`https://api.github.com/users/${userNameValue}`);
 
             if (!res.ok) {
                 this.Skeleton.style.display = "none";
-                this.profileContainer.innerHTML = `
-                <div class="bg-red-500/20 border border-red-500 p-4 rounded-lg text-center mt-5">
-               <p>User not found!</p>
-                </div>
-                `;
+
+                // Give a clearer message when it's a rate-limit issue vs a real 404
+                if (res.status === 403) {
+                    this.profileContainer.innerHTML = `
+                    <div class="bg-red-500/20 border border-red-500 p-4 rounded-lg text-center mt-5">
+                    <p>Rate limit exceeded. Please try again later.</p>
+                    </div>
+                    `;
+                } else {
+                    this.profileContainer.innerHTML = `
+                    <div class="bg-red-500/20 border border-red-500 p-4 rounded-lg text-center mt-5">
+                    <p>User not found!</p>
+                    </div>
+                    `;
+                }
                 return;
             }
+
             let data = await res.json();
             this.Skeleton.style.display = "none";
             this.profileContainer.innerHTML = `
@@ -48,21 +74,18 @@ class GetGithubProfileFinder {
           <p>
           <i class="fa-solid fa-location-dot"></i>
           ${data.location || "Unknown"}</p>
-          </p>
 
           <p>
           <i class="fa-solid fa-building"></i>
           ${data.company || "Not specified"}</p>
-          </p>
 
           <p>
           <i class="fa-solid fa-calendar"></i>
           joined ${new Date(data.created_at).getFullYear()}</p>
-          </p>
           </div>
-          
+
           <div class="flex justify-between mt-6 text-sm">
-          
+
           <div>
           <p class="font-bold text-lg">
           ${data.followers}
@@ -112,17 +135,16 @@ View GitHub Profile
         } catch (error) {
             console.log(error);
 
-
             this.Skeleton.style.display = "none";
             this.profileContainer.innerHTML = `
-           
-           
            <div class="bg-red-500/20 border border-red-400 p-5 rounded-xl text-center mt-5">
 <p>
 Something went wrong! Please try again later.
 </p>
            </div>
-           `
+           `;
+        } finally {
+            this.searchBtn.disabled = false;
         }
     }
 }
