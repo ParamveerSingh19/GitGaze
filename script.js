@@ -92,7 +92,7 @@ class GitGaze {
         this.clearOutput();
         const line = document.createElement("div");
         line.className = "line";
-        line.innerHTML = `<span class="arrow">&gt;</span><span class="typed"></span><span class="cursor"></span>`;
+        line.innerHTML = `<span class="typed"></span><span class="cursor"></span>`;
         this.output.appendChild(line);
 
         const typed = line.querySelector(".typed");
@@ -171,6 +171,7 @@ class GitGaze {
         this.isLoading = true;
         this.runBtn.disabled = true;
         this.input.disabled = true;
+        document.body.classList.add("has-searched");
         this.renderTyping(username);
         this.renderSkeleton();
 
@@ -292,7 +293,7 @@ class GitGaze {
       ${topRepos.length ? `
         <div class="repos">
           <div class="repos-head">top repositories</div>
-          ${topRepos.map((r) => this.repoRow(r)).join("")}
+          ${this.assignRepoColors(topRepos).map(({ repo, color }) => this.repoRow(repo, color)).join("")}
         </div>
       ` : ""}
 
@@ -320,12 +321,82 @@ class GitGaze {
     `;
     }
 
-    repoRow(repo) {
-        const color = (repo.language && LANGUAGE_COLORS[repo.language]) || "#4a525d";
+    hexToHsl(hex) {
+        const r = parseInt(hex.slice(1, 3), 16) / 255;
+        const g = parseInt(hex.slice(3, 5), 16) / 255;
+        const b = parseInt(hex.slice(5, 7), 16) / 255;
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        let h = 0;
+        let s = 0;
+        const l = (max + min) / 2;
+
+        if (max !== min) {
+            const d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                default: h = (r - g) / d + 4; break;
+            }
+            h /= 6;
+        }
+        return { h: h * 360, s: s * 100, l: l * 100 };
+    }
+
+    hslToHex(h, s, l) {
+        h /= 360; s /= 100; l /= 100;
+        let r, g, b;
+        if (s === 0) {
+            r = g = b = l;
+        } else {
+            const hue2rgb = (p, q, t) => {
+                if (t < 0) t += 1;
+                if (t > 1) t -= 1;
+                if (t < 1 / 6) return p + (q - p) * 6 * t;
+                if (t < 1 / 2) return q;
+                if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+                return p;
+            };
+            const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            const p = 2 * l - q;
+            r = hue2rgb(p, q, h + 1 / 3);
+            g = hue2rgb(p, q, h);
+            b = hue2rgb(p, q, h - 1 / 3);
+        }
+        const toHex = (x) => Math.round(x * 255).toString(16).padStart(2, "0");
+        return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    }
+
+    assignRepoColors(topRepos) {
+        const usedHues = [];
+        return topRepos.map((repo) => {
+            const base = (repo.language && LANGUAGE_COLORS[repo.language]) || "#8b93a1";
+            let { h } = this.hexToHsl(base);
+
+            // Keep nudging the hue until it's clearly distinct from colors already used in this list
+            let attempts = 0;
+            while (
+                usedHues.some((u) => Math.min(Math.abs(u - h), 360 - Math.abs(u - h)) < 35) &&
+                attempts < 10
+            ) {
+                h = (h + 47) % 360;
+                attempts++;
+            }
+            usedHues.push(h);
+
+            // Fixed vivid saturation/lightness so every dot is bright, regardless of GitHub's often-muted defaults
+            const color = this.hslToHex(h, 72, 58);
+            return { repo, color };
+        });
+    }
+
+    repoRow(repo, color) {
+        const dotColor = color || (repo.language && LANGUAGE_COLORS[repo.language]) || "#4a525d";
         const url = this.safeUrl(repo.html_url) || "#";
         return `
       <div class="repo-row">
-        <span class="repo-lang-dot" style="background:${color}"></span>
+        <span class="repo-lang-dot" style="background:${dotColor}"></span>
         <a class="repo-name" href="${url}" target="_blank" rel="noopener noreferrer">${this.escapeHtml(repo.name)}</a>
         <span class="repo-stars">${this.iconStar()} ${repo.stargazers_count.toLocaleString()}</span>
       </div>
