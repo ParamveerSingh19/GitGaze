@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GitGaze — profile lookup, in your terminal</title>
+  <title>GitGaze</title>
   <meta name="description" content="Look up any GitHub profile from a terminal-styled interface." />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,9 +23,8 @@
     <header class="head">
       <div class="logo">
         <span class="logo-caret">&gt;_</span>
-        <span class="logo-text">gitgaze</span>
+        <span class="logo-text">GitGaze</span>
       </div>
-      <p class="eyebrow">// github profile lookup, in your terminal</p>
     </header>
 
     <section class="terminal" role="search">
@@ -33,7 +32,6 @@
         <span class="dot dot-r"></span>
         <span class="dot dot-y"></span>
         <span class="dot dot-g"></span>
-        <span class="terminal-title">guest@gitgaze — zsh</span>
       </div>
 
       <div class="terminal-body">
@@ -42,8 +40,8 @@
             <span class="prompt-user">guest</span><span class="prompt-at">@</span><span
               class="prompt-host">gitgaze</span><span class="prompt-sep">:~$</span>
           </label>
-          <span class="prompt-cmd">fetch</span>
-          <input type="text" id="searchInput" class="prompt-input" placeholder="username" autocomplete="off"
+          <span class="prompt-cmd">Enter</span>
+          <input type="text" id="searchInput" class="prompt-input" placeholder="Enter username" autocomplete="off"
             autocapitalize="off" spellcheck="false" />
           <button id="searchBtn" class="prompt-run" aria-label="Run search">
             <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
@@ -57,7 +55,6 @@
       </div>
     </section>
 
-    <p class="hint">Press <kbd>Enter</kbd> to run &middot; data via the public GitHub API</p>
   </main>
 
   <script src="script.js"></script>

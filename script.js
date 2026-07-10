@@ -32,6 +32,8 @@ class GitGaze {
         this.output = document.getElementById("output");
         this.root = document.documentElement;
         this.lastRequestId = 0;
+        this.activeController = null;
+        this.isLoading = false;
         this.addEvents();
     }
 
@@ -43,6 +45,8 @@ class GitGaze {
     }
 
     handleSearch() {
+        if (this.isLoading) return; // ignore double-submits while a search is in flight
+
         const username = this.input.value.trim();
 
         if (!username) {
@@ -154,13 +158,33 @@ class GitGaze {
 
 
     async getProfile(username) {
+        // Cancel any request still in flight before starting a new one
+        if (this.activeController) {
+            this.activeController.abort();
+        }
+
+        const controller = new AbortController();
+        this.activeController = controller;
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
         const requestId = ++this.lastRequestId;
+        this.isLoading = true;
         this.runBtn.disabled = true;
+        this.input.disabled = true;
         this.renderTyping(username);
         this.renderSkeleton();
 
         try {
-            const res = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}`);
+            const [res, repoRes] = await Promise.all([
+                fetch(
+                    `https://api.github.com/users/${encodeURIComponent(username)}`,
+                    { signal: controller.signal }
+                ),
+                fetch(
+                    `https://api.github.com/users/${encodeURIComponent(username)}/repos?per_page=100&sort=updated`,
+                    { signal: controller.signal }
+                ).catch(() => null), // repos are non-fatal — swallow failure here
+            ]);
 
             if (requestId !== this.lastRequestId) return;
 
@@ -178,24 +202,32 @@ class GitGaze {
             const data = await res.json();
             if (requestId !== this.lastRequestId) return;
 
-
             let repos = [];
-            try {
-                const repoRes = await fetch(
-                    `https://api.github.com/users/${encodeURIComponent(username)}/repos?per_page=100&sort=updated`
-                );
-                if (repoRes.ok) repos = await repoRes.json();
-            } catch (_) { /* non-fatal */ }
+            if (repoRes && repoRes.ok) {
+                try {
+                    repos = await repoRes.json();
+                } catch (_) { /* non-fatal */ }
+            }
 
             if (requestId !== this.lastRequestId) return;
 
             this.renderProfile(data, repos);
         } catch (error) {
             if (requestId !== this.lastRequestId) return;
-            console.error(error);
-            this.renderError("Network error — check your connection and try again.");
+            if (error.name === "AbortError") {
+                this.renderError("Request timed out — check your connection and try again.");
+            } else {
+                console.error(error);
+                this.renderError("Network error — check your connection and try again.");
+            }
         } finally {
-            if (requestId === this.lastRequestId) this.runBtn.disabled = false;
+            clearTimeout(timeoutId);
+            if (requestId === this.lastRequestId) {
+                this.isLoading = false;
+                this.runBtn.disabled = false;
+                this.input.disabled = false;
+                if (this.activeController === controller) this.activeController = null;
+            }
         }
     }
 
@@ -265,8 +297,8 @@ class GitGaze {
       ` : ""}
 
       <div class="actions">
-        ${safeBlog ? `<a class="action" href="${safeBlog}" target="_blank" rel="noopener noreferrer">visit website</a>` : ""}
-        <a class="action action-primary" href="${safeProfile}" target="_blank" rel="noopener noreferrer">view on github</a>
+        ${safeBlog ? `<a class="action action-website" href="${safeBlog}" target="_blank" rel="noopener noreferrer">visit website</a>` : ""}
+        <a class="action action-github" href="${safeProfile}" target="_blank" rel="noopener noreferrer">view on github</a>
       </div>
     `;
 
