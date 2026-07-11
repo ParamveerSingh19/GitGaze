@@ -803,7 +803,8 @@ body.has-searched input:focus-visible {
     outline-color: #ffd23f;
 }
 
-body.has-searched .prompt-input:focus-visible {
+.prompt-input:focus,
+.prompt-input:focus-visible {
     outline: none;
 }
 
