@@ -216,10 +216,10 @@ class GitGaze {
         } catch (error) {
             if (this.activeController !== controller) return;
             if (error.name === "AbortError") {
-                this.renderError("Request timed out — check your connection and try again.");
+                this.renderError("Request timed out check your connection and try again.");
             } else {
                 console.error(error);
-                this.renderError("Network error — check your connection and try again.");
+                this.renderError("Check your connection and try again.");
             }
         } finally {
             clearTimeout(timeoutId);
