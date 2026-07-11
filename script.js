@@ -50,7 +50,7 @@ class GitGaze {
         const username = this.input.value.trim();
 
         if (!username) {
-            this.renderError("Enter a username first — try “octocat”.");
+            this.renderError("Enter a username first!");
             return;
         }
 
