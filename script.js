@@ -21,7 +21,7 @@ const LANGUAGE_COLORS = {
     Elixir: "#6e4a7e",
     Lua: "#000080",
 };
-const DEFAULT_ACCENT = "#7ee787";
+const DEFAULT_ACCENT = "#2dd4bf";
 
 const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -31,9 +31,9 @@ class GitGaze {
         this.runBtn = document.getElementById("searchBtn");
         this.output = document.getElementById("output");
         this.root = document.documentElement;
-        this.lastRequestId = 0;
         this.activeController = null;
         this.isLoading = false;
+        this.hasResult = false;
         this.addEvents();
     }
 
@@ -45,7 +45,7 @@ class GitGaze {
     }
 
     handleSearch() {
-        if (this.isLoading) return; // ignore double-submits while a search is in flight
+        if (this.isLoading) return;
 
         const username = this.input.value.trim();
 
@@ -91,7 +91,7 @@ class GitGaze {
     renderTyping(username) {
         this.clearOutput();
         const line = document.createElement("div");
-        line.className = "line";
+        line.className = "typing-line" + (this.hasResult ? " typing-line-gold" : "");
         line.innerHTML = `<span class="typed"></span><span class="cursor"></span>`;
         this.output.appendChild(line);
 
@@ -132,10 +132,10 @@ class GitGaze {
         const wrap = document.createElement("div");
         wrap.className = "skeleton";
         wrap.innerHTML = `
-      <div class="sk-avatar"></div>
-      <div class="sk-row" style="width:40%"></div>
-      <div class="sk-row" style="width:70%"></div>
-      <div class="sk-row" style="width:55%"></div>
+      <div class="skeleton-avatar"></div>
+      <div class="skeleton-row" style="width:40%"></div>
+      <div class="skeleton-row" style="width:70%"></div>
+      <div class="skeleton-row" style="width:55%"></div>
     `;
         this.output.appendChild(wrap);
     }
@@ -158,16 +158,15 @@ class GitGaze {
 
 
     async getProfile(username) {
-        // Cancel any request still in flight before starting a new one
+
         if (this.activeController) {
             this.activeController.abort();
         }
 
         const controller = new AbortController();
         this.activeController = controller;
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        const requestId = ++this.lastRequestId;
         this.isLoading = true;
         this.runBtn.disabled = true;
         this.input.disabled = true;
@@ -184,10 +183,10 @@ class GitGaze {
                 fetch(
                     `https://api.github.com/users/${encodeURIComponent(username)}/repos?per_page=100&sort=updated`,
                     { signal: controller.signal }
-                ).catch(() => null), // repos are non-fatal — swallow failure here
+                ).catch(() => null),
             ]);
 
-            if (requestId !== this.lastRequestId) return;
+            if (this.activeController !== controller) return;
 
             if (!res.ok) {
                 if (res.status === 403) {
@@ -201,7 +200,7 @@ class GitGaze {
             }
 
             const data = await res.json();
-            if (requestId !== this.lastRequestId) return;
+            if (this.activeController !== controller) return;
 
             let repos = [];
             if (repoRes && repoRes.ok) {
@@ -210,11 +209,12 @@ class GitGaze {
                 } catch (_) { /* non-fatal */ }
             }
 
-            if (requestId !== this.lastRequestId) return;
+            if (this.activeController !== controller) return;
 
             this.renderProfile(data, repos);
+            this.hasResult = true;
         } catch (error) {
-            if (requestId !== this.lastRequestId) return;
+            if (this.activeController !== controller) return;
             if (error.name === "AbortError") {
                 this.renderError("Request timed out — check your connection and try again.");
             } else {
@@ -223,11 +223,11 @@ class GitGaze {
             }
         } finally {
             clearTimeout(timeoutId);
-            if (requestId === this.lastRequestId) {
+            if (this.activeController === controller) {
                 this.isLoading = false;
                 this.runBtn.disabled = false;
                 this.input.disabled = false;
-                if (this.activeController === controller) this.activeController = null;
+                this.activeController = null;
             }
         }
     }
@@ -270,7 +270,7 @@ class GitGaze {
         card.innerHTML = `
       <div class="card-top">
         <img class="avatar" src="${this.escapeHtml(data.avatar_url)}" alt="${this.escapeHtml(data.login)}'s avatar" width="64" height="64" loading="lazy" />
-        <div class="identity">
+        <div class="profile-info">
           <p class="name">${this.escapeHtml(data.name || data.login)}</p>
           <p class="login">@${this.escapeHtml(data.login)}${lang ? ` &middot; mostly ${this.escapeHtml(lang)}` : ""}</p>
           ${data.bio ? `<p class="bio">${this.escapeHtml(data.bio)}</p>` : ""}
@@ -290,12 +290,13 @@ class GitGaze {
         ${this.statBlock("gists", data.public_gists)}
       </div>
 
-      ${topRepos.length ? `
-        <div class="repos">
-          <div class="repos-head">top repositories</div>
-          ${this.assignRepoColors(topRepos).map(({ repo, color }) => this.repoRow(repo, color)).join("")}
-        </div>
-      ` : ""}
+      <div class="repos">
+        <div class="repos-head">top repositories</div>
+        ${topRepos.length
+                ? this.assignDistinctColors(topRepos).map(({ repo, color }) => this.repoRow(repo, color)).join("")
+                : `<p class="repos-empty">No public repositories.</p>`
+            }
+      </div>
 
       <div class="actions">
         ${safeBlog ? `<a class="action action-website" href="${safeBlog}" target="_blank" rel="noopener noreferrer">visit website</a>` : ""}
@@ -321,78 +322,28 @@ class GitGaze {
     `;
     }
 
-    hexToHsl(hex) {
-        const r = parseInt(hex.slice(1, 3), 16) / 255;
-        const g = parseInt(hex.slice(3, 5), 16) / 255;
-        const b = parseInt(hex.slice(5, 7), 16) / 255;
-        const max = Math.max(r, g, b);
-        const min = Math.min(r, g, b);
-        let h = 0;
-        let s = 0;
-        const l = (max + min) / 2;
 
-        if (max !== min) {
-            const d = max - min;
-            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-            switch (max) {
-                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-                case g: h = (b - r) / d + 2; break;
-                default: h = (r - g) / d + 4; break;
-            }
-            h /= 6;
-        }
-        return { h: h * 360, s: s * 100, l: l * 100 };
-    }
-
-    hslToHex(h, s, l) {
-        h /= 360; s /= 100; l /= 100;
-        let r, g, b;
-        if (s === 0) {
-            r = g = b = l;
-        } else {
-            const hue2rgb = (p, q, t) => {
-                if (t < 0) t += 1;
-                if (t > 1) t -= 1;
-                if (t < 1 / 6) return p + (q - p) * 6 * t;
-                if (t < 1 / 2) return q;
-                if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-                return p;
-            };
-            const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-            const p = 2 * l - q;
-            r = hue2rgb(p, q, h + 1 / 3);
-            g = hue2rgb(p, q, h);
-            b = hue2rgb(p, q, h - 1 / 3);
-        }
-        const toHex = (x) => Math.round(x * 255).toString(16).padStart(2, "0");
-        return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-    }
-
-    assignRepoColors(topRepos) {
-        const usedHues = [];
-        return topRepos.map((repo) => {
+    assignDistinctColors(repos) {
+        const palette = ["#ffd23f", "#f2785c", "#00e5ff", "#2dd4bf", "#ff6b6b", "#a97bff", "#89e051"];
+        const used = [];
+        let next = 0;
+        return repos.map((repo) => {
             const base = (repo.language && LANGUAGE_COLORS[repo.language]) || "#8b93a1";
-            let { h } = this.hexToHsl(base);
-
-            // Keep nudging the hue until it's clearly distinct from colors already used in this list
-            let attempts = 0;
-            while (
-                usedHues.some((u) => Math.min(Math.abs(u - h), 360 - Math.abs(u - h)) < 35) &&
-                attempts < 10
-            ) {
-                h = (h + 47) % 360;
-                attempts++;
+            let color = base;
+            if (used.includes(color)) {
+                while (used.includes(palette[next % palette.length]) && next < palette.length * 2) {
+                    next++;
+                }
+                color = palette[next % palette.length];
+                next++;
             }
-            usedHues.push(h);
-
-            // Fixed vivid saturation/lightness so every dot is bright, regardless of GitHub's often-muted defaults
-            const color = this.hslToHex(h, 72, 58);
+            used.push(color);
             return { repo, color };
         });
     }
 
-    repoRow(repo, color) {
-        const dotColor = color || (repo.language && LANGUAGE_COLORS[repo.language]) || "#4a525d";
+    repoRow(repo, dotColor) {
+        dotColor = dotColor || (repo.language && LANGUAGE_COLORS[repo.language]) || "#8b93a1";
         const url = this.safeUrl(repo.html_url) || "#";
         return `
       <div class="repo-row">

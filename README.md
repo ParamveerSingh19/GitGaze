@@ -1,59 +1,101 @@
 # GitGaze 🔎
 
-A terminal-styled, theme-aware GitHub profile lookup tool built using HTML, CSS, and vanilla JavaScript. GitGaze lets you search any GitHub username and instantly see a clean, animated profile card with stats, top repositories, and quick links — all wrapped in a fast, techy interface.
+A sleek GitHub profile explorer built with **HTML, CSS, and Vanilla JavaScript**. GitGaze lets you search any GitHub username and instantly view a beautifully designed profile card with profile details, repository insights, and developer-friendly visuals powered by the GitHub REST API.
 
 ---
 
-## 🚀 Features
+## ✨ Features
 
-- 🔍 **Instant Profile Lookup:** Search any GitHub username and fetch live data from the public GitHub API.
-- 🖥️ **Terminal-Styled UI:** A window-style search bar with colored status dots and a typewriter-style loading animation.
-- 🎨 **Dynamic Accent Color:** The interface accent color automatically shifts based on the user's most-used programming language.
-- 📊 **Profile Stats:** Followers, following, public repos, and gists, shown with animated count-up numbers.
-- 📦 **Top Repositories:** Displays the top 5 non-forked repos sorted by stars, each tagged with its language color.
-- 🔗 **Quick Actions:** One-click buttons to visit the user's website or GitHub profile.
-- ⚡ **Optimized Requests:** Profile and repository data are fetched in parallel, with request cancellation and a 10-second timeout to prevent stuck or stale loads.
-- 🚫 **Duplicate Request Guard:** Prevents overlapping searches from rapid clicks or repeated Enter presses.
-- ⚠️ **Graceful Error Handling:** Clear messages for invalid usernames, rate limits, network errors, and timeouts.
-- 🌌 **Animated Background:** A subtle, techy animated star and grid background with reduced-motion support.
-- 📱 **Fully Responsive Design:** Optimized for both mobile and desktop.
+- 🔍 **Instant GitHub Profile Search** using the GitHub REST API.
+- 🎨 **Modern Developer UI** featuring glassmorphism, animated gradients, and Git-inspired aesthetics.
+- ⚡ **Parallel API Requests** to fetch profile and repository data simultaneously for faster loading.
+- 🛑 **Request Cancellation & Timeout** using `AbortController` with a 10-second timeout.
+- 🚫 **Duplicate Search Protection** prevents multiple requests while one is already running.
+- ⌨️ **Typing Animation** with skeleton loaders for a polished loading experience.
+- 📊 **Animated Statistics** for Followers, Following, Repositories, and Gists.
+- 📦 **Top 5 Repositories** sorted by star count while excluding forked repositories.
+- 🌈 **Dynamic Accent Theme** based on the user's most-used programming language.
+- 🎯 **Repository Language Indicators** with unique language colors.
+- 🔗 **Quick Actions** to open the GitHub profile or personal website.
+- ⚠️ **Graceful Error Handling** for invalid usernames, rate limits, network failures, and request timeouts.
+- ✨ **Smooth Animations** with automatic reduced-motion support.
+- 📱 **Fully Responsive** across desktop, tablet, and mobile devices.
+- ♿ **Accessible Design** with keyboard navigation, ARIA labels, and semantic HTML.
 
 ---
 
 ## 🌐 Live Demo
 
-Experience GitGaze in action! Visit the deployed project here:
-➡️ **[https://gitgaze.netlify.app/](https://gitgaze.netlify.app/)**
+🚀 **Try GitGaze**
+
+👉 [https://gitgaze.netlify.app/](https://gitgaze.netlify.app/)
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **HTML5**
-- **CSS3**
-- **JavaScript (ES6)**
-- [GitHub REST API](https://docs.github.com/en/rest) (for profile and repo data)
-- [Google Fonts](https://fonts.google.com) — JetBrains Mono & Inter
+- HTML5
+- CSS3
+- Vanilla JavaScript (ES6+)
+- GitHub REST API
+- Google Fonts (Manrope & Martian Mono)
 
 ---
 
-## 📂 How to Use
+## 🚀 Getting Started
 
-1. **Clone the repository**:
+### Clone the repository
 
-    ```bash
-    git clone https://github.com/ParamveerSingh19/gitgaze.git
-    ```
+```bash
+git clone https://github.com/ParamveerSingh19/gitgaze.git
+```
 
-2. **Navigate into the project folder**:
+### Navigate to the project
 
-    ```bash
-    cd gitgaze
-    ```
+```bash
+cd gitgaze
+```
 
-3. **Open `index.html` in your browser** to launch the application.
+### Run the project
 
-> **Note:** GitGaze uses the public, unauthenticated GitHub API, which is limited to 60 requests per hour per IP address.
+Simply open **index.html** in your browser.
+
+---
+
+## 📌 How It Works
+
+1. Enter a GitHub username.
+2. GitGaze fetches profile and repository data in parallel.
+3. The application displays:
+   - 👤 Profile information
+   - 📊 Followers, Following, Public Repositories & Gists
+   - ⭐ Top 5 starred repositories
+   - 💻 Most-used programming language
+   - 📍 Location, Company & Join Year
+   - 🔗 GitHub profile and personal website
+
+---
+
+## ⚠️ GitHub API Rate Limit
+
+GitGaze uses GitHub's public unauthenticated REST API.
+
+> **Rate Limit:** 60 requests per hour per IP address.
+
+If the limit is exceeded, GitGaze displays a friendly error message and you can try again after the limit resets.
+
+---
+
+## 📁 Project Structure
+
+```text
+GitGaze
+│
+├── index.html
+├── style.css
+├── script.js
+└── README.md
+```
 
 ---
 
