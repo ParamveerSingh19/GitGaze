@@ -69,8 +69,14 @@ class GitGaze {
     }
 
     safeUrl(url) {
+        if (!url) return null;
+        let normalized = url.trim();
+        if (!normalized) return null;
+        if (!/^https?:\/\//i.test(normalized)) {
+            normalized = `https://${normalized}`;
+        }
         try {
-            const parsed = new URL(url, window.location.href);
+            const parsed = new URL(normalized);
             if (parsed.protocol === "http:" || parsed.protocol === "https:") {
                 return parsed.href;
             }
